@@ -1,4 +1,4 @@
-export default interface AudioSpectrum {
+export default interface AudioVisualizer {
   music: string,
   color: string,
   size?: number,  

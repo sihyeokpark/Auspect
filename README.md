@@ -1,2 +1,2 @@
 # Auspect
-Audio spectrum component for React.js
+Audio visualizer component for React.js
