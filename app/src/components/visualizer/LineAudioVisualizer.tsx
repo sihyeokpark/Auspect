@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 
+import getAudioData from '../../utils/audio'
 import AudioVisualizer from '../../interfaces/AudioVisualizer'
 
 interface LineAudioVisualizerProps extends AudioVisualizer {
@@ -18,16 +19,17 @@ class Line {
 export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [time, setTime] = useState<number>(0)
+  const audioData = useRef<number[]>([])
   const requestRef = useRef<number>(0)
   const linesRef = useRef<Line[]>([])
+  const step = useRef<number>(0)
 
-  const init = useCallback(() => {
+  function init() {
     if (linesRef.current?.length !== 0) return // prevent re-initialization (React.strictMode)
-    const lines = linesRef.current
     for (let i = 0; i < props.count; i++) {
-      lines.push(new Line(200 + i*20, 500, 100, 'black'))
+      linesRef.current.push(new Line(200 + i*20, 500, 100, 'black'))
     }
-  }, [])
+  }
 
   const draw = useCallback((t: DOMHighResTimeStamp): void => {
     const canvas = canvasRef.current
@@ -41,7 +43,6 @@ export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
       const random: number = Math.random() * 5
       lines[i].height -= random-0.5 * 5
     }
-    console.log(lines)
 
     if (ctx) {
       ctx.strokeStyle = props.color
@@ -58,13 +59,18 @@ export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
       
     }
     requestRef.current = requestAnimationFrame(draw)
-  }, [props.count])
+  }, [props.count, audioData, step])
 
   useEffect(() => {
-    init()
-    requestRef.current = requestAnimationFrame(draw)
+    async function main() {
+      init()
+      audioData.current = await getAudioData('/SoundHelix-Song-1.mp3')
 
-    return () => cancelAnimationFrame(requestRef.current)
+      requestRef.current = requestAnimationFrame(draw)
+      return () => cancelAnimationFrame(requestRef.current)
+    }
+
+    main()
   }, [])
 
   return (
