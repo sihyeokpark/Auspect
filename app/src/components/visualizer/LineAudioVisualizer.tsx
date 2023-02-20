@@ -40,8 +40,8 @@ export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
     setTime(t)
 
     for (let i = 0; i < lines.length; i++) {
-      const random: number = Math.random() * 5
-      lines[i].height -= random-0.5 * 5
+      lines[i].height = audioData.current[step.current] * 100
+      step.current += 1
     }
 
     if (ctx) {
@@ -53,7 +53,6 @@ export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
         ctx.moveTo(line.x, line.y)
         ctx.lineTo(line.x, line.y - line.height)
         ctx.closePath()
-
         ctx.stroke()
       })
       
