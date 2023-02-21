@@ -6,20 +6,27 @@ export default async function getAudioData(src: string) {
   const arrayBuffer = await response.arrayBuffer()
 
   const audioCtx = new AudioContext()
-  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
-  const rawData = audioBuffer.getChannelData(0)
+  let soundSource
+  audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
+    soundSource = audioCtx.createBufferSource()
+  })
+  // const rawData = audioBuffer.getChannelData(0)
 
-  console.log(rawData.length, rawData)
+  // console.log(rawData.length, rawData)
 
-  const samplesPerSec = 100 // 1초당 표시할 샘플의 수
-  const { duration, sampleRate } = audioBuffer
+  // const samplesPerSec = 100 // 1초당 표시할 샘플의 수
+  // const { duration, sampleRate } = audioBuffer
 
-  const totalSamples = duration * samplesPerSec // 구간 처리 후 전체 샘플 수
-  const blockSize = Math.floor(sampleRate / samplesPerSec) // 샘플링 구간 사이즈
-  const filteredData: number[] = []
+  // const totalSamples = duration * samplesPerSec // 구간 처리 후 전체 샘플 수
+  // const blockSize = Math.floor(sampleRate / samplesPerSec) // 샘플링 구간 사이즈
+  // const filteredData: number[] = []
 
   console.log(audioCtx)
   const analyser = audioCtx.createAnalyser()
+  analyser.minDecibels = -90;
+  analyser.maxDecibels = -10;
+  analyser.smoothingTimeConstant = 0.85;
+
   analyser.connect(audioCtx.destination)
   analyser.fftSize = 256
   const bufferLength = analyser.frequencyBinCount
