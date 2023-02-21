@@ -1,5 +1,7 @@
 export default interface AudioVisualizer {
   music: string,
   color: string,
-  size?: number,  
+  width: number,
+  x: number,
+  y: number
 }

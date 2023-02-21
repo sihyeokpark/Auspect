@@ -2,9 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 
 import getAudioData from '../../utils/audio'
 import AudioVisualizer from '../../interfaces/AudioVisualizer'
+import { buffer } from 'stream/consumers'
 
 interface LineAudioVisualizerProps extends AudioVisualizer {
-  count: number
+  
 }
 
 class Line {
@@ -19,17 +20,18 @@ class Line {
 export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [time, setTime] = useState<number>(0)
-  const audioData = useRef<number[]>([])
+  const audioData = useRef<Uint8Array>(new Uint8Array())
   const requestRef = useRef<number>(0)
   const linesRef = useRef<Line[]>([])
-  const step = useRef<number>(0)
+  const bufferLength = useRef<number>(0)
+  const analyser = useRef<AnalyserNode>()
 
-  function init() {
-    if (linesRef.current?.length !== 0) return // prevent re-initialization (React.strictMode)
-    for (let i = 0; i < props.count; i++) {
-      linesRef.current.push(new Line(200 + i*20, 500, 100, 'black'))
-    }
-  }
+  // function init() {
+  //   if (linesRef.current?.length !== 0) return // prevent re-initialization (React.strictMode)
+  //   for (let i = 0; i < props.count; i++) {
+  //     linesRef.current.push(new Line(200 + i*20, 500, 100, 'black'))
+  //   }
+  // }
 
   const draw = useCallback((t: DOMHighResTimeStamp): void => {
     const canvas = canvasRef.current
@@ -39,31 +41,37 @@ export default function BarAudioSpectrum(props: LineAudioVisualizerProps) {
     ctx?.clearRect(0, 0, canvas?.width as number, canvas?.height as number);
     setTime(t)
 
-    for (let i = 0; i < lines.length; i++) {
-      lines[i].height = audioData.current[step.current] * 100
-      step.current += 1
-    }
+    analyser.current!.getByteFrequencyData(audioData.current)
 
-    if (ctx) {
-      ctx.strokeStyle = props.color
-      ctx.lineWidth = 5
-      
-      lines.forEach(line => {
-        ctx.beginPath()
-        ctx.moveTo(line.x, line.y)
-        ctx.lineTo(line.x, line.y - line.height)
-        ctx.closePath()
-        ctx.stroke()
-      })
-      
+    if (!ctx) {
+      console.log('canvas ctx doesn\'t exist')
+      return
     }
+    ctx.strokeStyle = props.color
+    ctx.lineWidth = 5
+
+    let x = props.x
+    
+    for (let i = 0; i < bufferLength.current; i++) {
+      ctx.beginPath()
+      ctx.fillRect(x, props.y, props.width, audioData.current[i])
+      ctx.closePath()
+      ctx.stroke()
+      x += props.width + 20
+    }
+    
     requestRef.current = requestAnimationFrame(draw)
-  }, [props.count, audioData, step])
+  }, [props.x, props.y,  props.width, audioData, bufferLength, analyser])
 
   useEffect(() => {
     async function main() {
-      init()
-      audioData.current = await getAudioData('/SoundHelix-Song-1.mp3')
+      // init()
+      const [dataAnalyser, dataArray, dataLength] = await getAudioData('/SoundHelix-Song-1.mp3')
+      analyser.current = dataAnalyser as AnalyserNode
+      audioData.current = dataArray as Uint8Array
+      bufferLength.current = dataLength as number
+
+      console.log(audioData.current)
 
       requestRef.current = requestAnimationFrame(draw)
       return () => cancelAnimationFrame(requestRef.current)

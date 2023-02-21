@@ -18,19 +18,31 @@ export default async function getAudioData(src: string) {
   const blockSize = Math.floor(sampleRate / samplesPerSec) // 샘플링 구간 사이즈
   const filteredData: number[] = []
 
-  for (let i = 0; i < totalSamples; i++) {
-    const blockStart = blockSize * i // 샘플 구간 시작 포인트
-    let blockSum = 0
+  console.log(audioCtx)
+  const analyser = audioCtx.createAnalyser()
+  analyser.connect(audioCtx.destination)
+  analyser.fftSize = 256
+  const bufferLength = analyser.frequencyBinCount
+  const dataArray = new Uint8Array(bufferLength)
+  analyser.getByteFrequencyData(dataArray)
 
-    for (let j = 0; j < blockSize; j++) {
-      if (rawData[blockStart + j]) {
-        blockSum = blockSum + Math.abs(rawData[blockStart + j]);
-      }
-    }
+  console.log(dataArray)
 
-    filteredData.push(blockSum / blockSize)
-  }
-  console.log(filteredData)
+  return [analyser, dataArray, bufferLength]
 
-  return filteredData
+  // for (let i = 0; i < totalSamples; i++) {
+  //   const blockStart = blockSize * i // 샘플 구간 시작 포인트
+  //   let blockSum = 0
+
+  //   for (let j = 0; j < blockSize; j++) {
+  //     if (rawData[blockStart + j]) {
+  //       blockSum = blockSum + Math.abs(rawData[blockStart + j]);
+  //     }
+  //   }
+
+  //   filteredData.push(blockSum / blockSize)
+  // }
+  // console.log(filteredData)
+
+  // return filteredData
 }
